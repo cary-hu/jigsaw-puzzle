@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import image from '../assets/default.png'
-import { GamePlay } from './logic'
+import { computed, ref, watch } from "vue";
+import image from "../assets/default.png";
+import { GamePlay } from "./logic";
 
-const play = new GamePlay(6)
+const play = new GamePlay(6);
 
-const n = ref(6)
+const n = ref(6);
 
 const width = computed(() => {
-  return 600 / n.value
-})
+  return 600 / n.value;
+});
 
-const state = computed(() => play.state.value)
+const state = computed(() => play.state.value);
 const beginGame = () => {
-  play.shuffle()
-}
+  play.shuffle();
+};
 
 </script>
 
