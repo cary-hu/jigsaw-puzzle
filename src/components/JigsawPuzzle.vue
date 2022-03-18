@@ -11,7 +11,10 @@ const width = computed(() => {
 });
 
 const state = computed(() => play.state.value);
-const simpleBoard = computed(() => state.value.board.flat());
+const simpleBoard = computed(() => state.value.board.flat().map((element, index) => {
+  element.index = element.x + element.y + index * Math.random();
+  return element;
+}));
 const isPlay = ref(false);
 const beginGame = () => {
   isPlay.value = true;
@@ -37,6 +40,24 @@ const downGameLevel = () => {
   play.reset(n.value);
 };
 
+const log = (e: any) => {
+  const oldIndex: number = e.moved.oldIndex;
+  const newIndex: number = e.moved.newIndex;
+  if (oldIndex > newIndex) {
+    const oldElement = simpleBoard.value[oldIndex];
+    const newElement = simpleBoard.value[newIndex];
+    oldElement.x = newElement.x;
+    oldElement.y = newElement.y;
+    let currentElement = newElement;
+    for (let index = newIndex + 1; index < oldIndex - 1; index++) {
+      const nextElement = simpleBoard.value[index];
+      currentElement.x = nextElement.x;
+      currentElement.y = nextElement.y;
+      currentElement = nextElement;
+    }
+  }
+};
+
 </script>
 
 <template>
@@ -55,10 +76,13 @@ const downGameLevel = () => {
         重置
       </div>
     </div>
-    <TransitionGroup name="list" tag="ul" class="board">
-      <li v-for="(row, index) in simpleBoard" :key="row.x + row.y + index * (Math.random())" class="jigsaw-block" :class="isPlay ? 'play' : ''" :data-origin-y="row.originY" :data-origin-x="row.originX" :style="{width: width + 'px', height: width + 'px', backgroundImage: 'url(' + image + ')', backgroundPositionX: (row.y * (100 / (n - 1))) + '%', backgroundPositionY: (row.x * (100 / (n - 1))) + '%'}" />
-    </TransitionGroup>
-    <!-- <draggable v-model="simpleBoard" tag="transition-group" :component-data="{name:'list'}" class="board" /> -->
+    <div class="board">
+      <draggable v-model="simpleBoard" :disabled="!isPlay" tag="transition-group" :component-data="{name:'list'}" item-key="index" :drag-options="{animation: 0}" @change="log">
+        <template #item="{element}">
+          <li class="jigsaw-block" :class="isPlay ? 'play' : ''" :style="{width: width + 'px', height: width + 'px', backgroundImage: 'url(' + image + ')', backgroundPositionX: (element.y * (100 / (n - 1))) + '%', backgroundPositionY: (element.x * (100 / (n - 1))) + '%'}" />
+        </template>
+      </draggable>
+    </div>
   </div>
 </template>
 
@@ -101,14 +125,12 @@ const downGameLevel = () => {
     user-select: none;
 }
 
-/* 1. declare transition */
 .list-move,
 .list-enter-active,
 .list-leave-active {
   transition: all 0.5s ease;
 }
 
-/* 2. declare enter from and leave to state */
 .list-leave-to {
   opacity: 0;
   transform: translateY(-20px);
@@ -118,8 +140,6 @@ const downGameLevel = () => {
   transform: translateY(20px);
 }
 
-/* 3. ensure leaving items are taken out of layout flow so that moving
-      animations can be calculated correctly. */
 .list-leave-active {
   position: absolute;
 }

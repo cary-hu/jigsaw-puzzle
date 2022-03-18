@@ -1,12 +1,13 @@
 import type { Ref } from "vue";
 import { ref } from "vue";
 
-interface BlockState {
+export interface BlockState {
   x: number
   y: number
   originX: number
   originY: number
   swapped: boolean
+  index: number
 }
 interface JigsawBlock {
   board: BlockState[][]
@@ -28,6 +29,7 @@ export class GamePlay {
           originX: x,
           originY: y,
           swapped: false,
+          index: 0,
         }))),
     };
   }
