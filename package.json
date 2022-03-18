@@ -8,7 +8,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.2.25"
+    "gsap": "^3.9.1",
+    "vue": "^3.2.25",
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
     "@caryhu/eslint-config-vue": "^0.0.5",
