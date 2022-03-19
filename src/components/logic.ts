@@ -8,9 +8,12 @@ export interface BlockState {
   originY: number
   swapped: boolean
   index: number
+  backgroundPositionX: string
+  backgroundPositionY: string
 }
 interface JigsawBlock {
-  board: BlockState[][]
+  board: BlockState[]
+  isWin: boolean
 }
 export class GamePlay {
   private _currentN = 6;
@@ -22,46 +25,71 @@ export class GamePlay {
   reset(n: number) {
     this._currentN = n;
     this.state.value = {
-      board: Array.from({ length: n }, (_, x) =>
-        Array.from({ length: n }, (_, y) => ({
+      board: [],
+      isWin: false,
+    };
+    let index = 0;
+    for (let x = 0; x < n; x++) {
+      for (let y = 0; y < n; y++) {
+        this.state.value.board.push({
           x,
           y,
           originX: x,
           originY: y,
           swapped: false,
-          index: 0,
-        }))),
-    };
+          index: x + y + index * Math.random(),
+          backgroundPositionX: `${y * (100 / (n - 1))}%`,
+          backgroundPositionY: `${x * (100 / (n - 1))}%`,
+        });
+        index++;
+      }
+    }
   }
 
   shuffle() {
-    const block = this.state.value.board;
     for (let k = 0; k < this._currentN; k++) {
       for (let i = 0; i < this._currentN; i++) {
-        const element = block[k][i];
+        const element = this.getBlockByPosition(k, i);
         if (element.swapped)
           continue;
 
         element.swapped = true;
         const { x, y } = this.getRandomNumber(this._currentN, k, i);
-        const swapItem = block[x][y];
-        element.x = swapItem.originX;
-        element.y = swapItem.originY;
-        swapItem.x = element.originX;
-        swapItem.y = element.originY;
+        const swapItem = this.getBlockByPosition(x, y);
+        [element.x, swapItem.x] = [swapItem.x, element.x];
+        [element.y, swapItem.y] = [swapItem.y, element.y];
+        [element.backgroundPositionX, swapItem.backgroundPositionX] = [swapItem.backgroundPositionX, element.backgroundPositionX];
+        [element.backgroundPositionY, swapItem.backgroundPositionY] = [swapItem.backgroundPositionY, element.backgroundPositionY];
+
         swapItem.swapped = true;
       }
     }
   }
 
-  getRandomNumber(n: number, notX: number, notY: number): { x: number; y: number } {
-    const block = this.state.value.board;
+  getBlockByPosition(positionX: number, positionY: number) {
+    return this.state.value.board.find(x => x.originX === positionX && x.originY === positionY) ?? {} as BlockState;
+  }
 
+  getRandomNumber(n: number, notX: number, notY: number): { x: number; y: number } {
     const randomNumberX = Math.floor(Math.random() * n);
     const randomNumberY = Math.floor(Math.random() * n);
-    if (block[randomNumberX][randomNumberY].swapped)
+    if (this.getBlockByPosition(randomNumberX, randomNumberY).swapped)
       return this.getRandomNumber(n, notX, notY);
     else
       return { x: randomNumberX, y: randomNumberY };
+  }
+
+  checkStates() {
+    let win = true;
+    let index = 0;
+    for (let x = 0; x < this._currentN; x++) {
+      for (let y = 0; y < this._currentN; y++) {
+        const element = this.state.value.board[index++];
+        if (element.x !== x || element.y !== y)
+          win = false;
+      }
+    }
+    this.state.value.isWin = win;
+    return win;
   }
 }

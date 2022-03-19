@@ -3,18 +3,15 @@ import { computed, ref } from "vue";
 import draggable from "vuedraggable";
 import image from "../assets/default.png";
 import { GamePlay } from "./logic";
-const n = ref(4);
+import Confetti from "./Confetti.vue";
+
+const n = ref(2);
 const play = new GamePlay(n.value);
 
 const width = computed(() => {
   return 600 / n.value;
 });
 
-const state = computed(() => play.state.value);
-const simpleBoard = computed(() => state.value.board.flat().map((element, index) => {
-  element.index = element.x + element.y + index * Math.random();
-  return element;
-}));
 const isPlay = ref(false);
 const beginGame = () => {
   isPlay.value = true;
@@ -40,24 +37,19 @@ const downGameLevel = () => {
   play.reset(n.value);
 };
 
-const log = (e: any) => {
-  const oldIndex: number = e.moved.oldIndex;
-  const newIndex: number = e.moved.newIndex;
-  if (oldIndex > newIndex) {
-    const oldElement = simpleBoard.value[oldIndex];
-    const newElement = simpleBoard.value[newIndex];
-    oldElement.x = newElement.x;
-    oldElement.y = newElement.y;
-    let currentElement = newElement;
-    for (let index = newIndex + 1; index < oldIndex - 1; index++) {
-      const nextElement = simpleBoard.value[index];
-      currentElement.x = nextElement.x;
-      currentElement.y = nextElement.y;
-      currentElement = nextElement;
-    }
-  }
+const dragging = ref(false);
+const dragOptions = computed(() => {
+  return {
+    animation: 200,
+    disabled: !isPlay.value,
+    ghostClass: "ghost",
+  };
+});
+const onDrop = () => {
+  const isWin = play.checkStates();
+  if (isWin)
+    isPlay.value = false;
 };
-
 </script>
 
 <template>
@@ -77,12 +69,33 @@ const log = (e: any) => {
       </div>
     </div>
     <div class="board">
-      <draggable v-model="simpleBoard" :disabled="!isPlay" tag="transition-group" :component-data="{name:'list'}" item-key="index" :drag-options="{animation: 0}" @change="log">
+      <draggable
+        v-model="play.state.value.board"
+        tag="transition-group"
+        :component-data="{
+          type: 'transition-group',
+          name: 'flip-list',
+        }"
+        item-key="index"
+        v-bind="dragOptions"
+        @end="onDrop"
+      >
         <template #item="{element}">
-          <li class="jigsaw-block" :class="isPlay ? 'play' : ''" :style="{width: width + 'px', height: width + 'px', backgroundImage: 'url(' + image + ')', backgroundPositionX: (element.y * (100 / (n - 1))) + '%', backgroundPositionY: (element.x * (100 / (n - 1))) + '%'}" />
+          <li
+            class="jigsaw-block"
+            :class="isPlay ? 'play' : ''"
+            :style="{
+              width: width + 'px',
+              height: width + 'px',
+              backgroundImage: 'url(' + image + ')',
+              backgroundPositionX: element.backgroundPositionX,
+              backgroundPositionY: element.backgroundPositionY
+            }"
+          />
         </template>
       </draggable>
     </div>
+    <Confetti :passed="play.state.value.isWin" />
   </div>
 </template>
 
@@ -100,6 +113,8 @@ const log = (e: any) => {
     display: flex;
     flex-wrap: wrap;
     list-style: none;
+    border-radius: 8px;
+    overflow: hidden;
 }
 .jigsaw-block {
     background-size: 600px 600px;
@@ -124,6 +139,12 @@ const log = (e: any) => {
     cursor: pointer;
     user-select: none;
 }
+.ghost {
+  opacity: 0.5;
+}
+.flip-list-move {
+  transition: transform 1s;
+}
 
 .list-move,
 .list-enter-active,
@@ -143,4 +164,23 @@ const log = (e: any) => {
 .list-leave-active {
   position: absolute;
 }
+
+.flip-list-move, /* apply transition to moving elements */
+.flip-list-enter-active,
+.flip-list-leave-active {
+  transition: all 0.5s ease;
+}
+
+.flip-list-enter-from,
+.flip-list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+/* ensure leaving items are taken out of layout flow so that moving
+   animations can be calculated correctly. */
+.flip-list-leave-active {
+  position: absolute;
+}
+
 </style>
