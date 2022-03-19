@@ -47,8 +47,12 @@ const dragOptions = computed(() => {
 });
 const onDrop = () => {
   const isWin = play.checkStates();
-  if (isWin)
+  if (isWin) {
     isPlay.value = false;
+    setTimeout(() => {
+      play.reset(n.value);
+    }, 500);
+  }
 };
 </script>
 
